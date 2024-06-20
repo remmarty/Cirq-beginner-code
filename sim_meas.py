@@ -1,4 +1,5 @@
 import cirq
+import qsimcirq
 
 NUM_QUBITS = 3
 NUM_REP = 10
@@ -20,5 +21,20 @@ simulation = simulator.run(circuit, repetitions=NUM_REP)
 measurements = simulation.measurements
 print(measurements)
 
-# TODO noisy simulation
-# TODO running on GPU
+""" Noisy simulation """
+# The single-qubit bit-flip channel
+bit_flip = cirq.bit_flip(p=0.2)
+noisy_circuit = cirq.Circuit()
+
+# Apply the channel to each qubit in a circuit
+for moment in circuit:
+    noisy_circuit.append(moment)
+    # Check if the moment contains measurement operations
+    if any(isinstance(op.gate, cirq.MeasurementGate) for op in moment):
+        # Apply bit-flip noise to each qubit before the measurements
+        noisy_circuit.insert(len(noisy_circuit) - 1, bit_flip.on_each(*qubits))
+print(noisy_circuit)
+
+noisy_simulation = simulator.run(noisy_circuit, repetitions=NUM_REP)
+measurements = noisy_simulation.measurements
+print(measurements)
