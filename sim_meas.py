@@ -38,3 +38,29 @@ print(noisy_circuit)
 noisy_simulation = simulator.run(noisy_circuit, repetitions=NUM_REP)
 measurements = noisy_simulation.measurements
 print(measurements)
+
+""" Using mixture protocol """
+for prob, kraus in cirq.mixture(bit_flip):
+    print(f"With probability {prob}, apply\n", kraus, end="\n\n")
+
+""" Adding custom (noisy) channel """
+class MyChannel(cirq.Gate):
+    def _num_qubits_(self) -> int:
+        return 1
+    
+    # Probability
+    def __init__(self, p: float) -> None:
+        self._p = p
+
+    def _mixture_(self):
+        # List of probabilities, there is '1.0 - p' probabilty of doing nothing (apply I)
+        #  and a 'p' probabiity of applying the X gate
+        ps = [1.0 - self._p, self._p]
+        ops = [cirq.unitary(cirq.I), cirq.unitary(cirq.X)]
+        return tuple(zip(ps, ops))
+
+    def _has_mixture_(self) -> bool:
+        return True
+    
+    def _circuit_diagram_info_(self, args) -> str:
+        return f"MyChannel({self._p})"
